@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RedPluto Analytics — Staffing CRM</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ============================================================
+   SUPABASE CONFIG — replace these two values after setup
+   ============================================================ */
+var SUPABASE_URL  = 'https://ltaevlyjssowkkhhyoom.supabase.co';
+var SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0YWV2bHlqc3Nvd2traGh5b29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MzkxMDcsImV4cCI6MjA5MjUxNTEwN30.1xxaRZlTiY7ISRCcCRgu3-tAvQT5ZO4RelOeJhyZUrY';
+/* ============================================================ */
+var supabase = null;
+function initSupabase(){
+  if(SUPABASE_URL.indexOf('YOUR_PROJECT')!==-1){
+    console.warn('Supabase not configured — running in demo mode');
+    return false;
+  }
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  return true;
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--red:#E63946;--red-dark:#C1121F;--red-bg:#FFF5F5;--ink:#1A1A2E;--ink-mid:#3D3D5C;--ink-soft:#7B7B9A;--border:#E8E8F0;--surface:#FAFAFA;--white:#FFFFFF;--green-bg:#F0FDF4;--amber-bg:#FFFBEB;--blue-bg:#EFF6FF;--purple-bg:#F5F3FF;--shadow-sm:0 1px 3px rgba(26,26,46,0.08);--shadow-md:0 4px 16px rgba(26,26,46,0.10);--radius:10px;--radius-sm:6px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink);min-height:100vh;}
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1A1A2E 0%,#16213E 50%,#0F3460 100%);position:relative;overflow:hidden;}
+#login-screen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(230,57,70,0.15) 0%,transparent 60%),radial-gradient(ellipse at 70% 30%,rgba(59,130,246,0.1) 0%,transparent 50%);}
+.login-card{background:rgba(255,255,255,0.04);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:48px 44px;width:420px;position:relative;z-index:1;}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px;}
+.login-logo-icon{width:40px;height:40px;background:var(--red);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.login-logo-text{font-size:22px;font-weight:600;color:#fff;}
+.login-logo-sub{font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:2px;text-transform:uppercase;margin-top:2px;}
+.login-title{font-size:28px;font-weight:600;color:#fff;margin-bottom:8px;}
+.login-sub{font-size:14px;color:rgba(255,255,255,0.5);margin-bottom:32px;}
+.login-label{font-size:12px;font-weight:500;color:rgba(255,255,255,0.6);margin-bottom:6px;letter-spacing:0.5px;}
+.login-input{width:100%;padding:12px 14px;font-size:14px;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:var(--radius-sm);color:#fff;margin-bottom:16px;outline:none;transition:border-color 0.2s;}
+.login-input:focus{border-color:var(--red);}
+.login-input::placeholder{color:rgba(255,255,255,0.3);}
+.login-btn{width:100%;padding:13px;background:var(--red);border:none;border-radius:var(--radius-sm);color:#fff;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background 0.2s;margin-top:4px;}
+.login-btn:hover{background:var(--red-dark);}
+.login-users{margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.08);}
+.login-users-label{font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:10px;letter-spacing:1px;text-transform:uppercase;}
+.user-pills{display:flex;gap:8px;flex-wrap:wrap;}
+.user-pill{padding:5px 12px;border:1px solid rgba(255,255,255,0.15);border-radius:20px;font-size:12px;color:rgba(255,255,255,0.6);cursor:pointer;transition:all 0.2s;}
+.user-pill:hover{border-color:var(--red);color:#fff;background:rgba(230,57,70,0.15);}
+.login-error{font-size:13px;color:#FF6B7A;margin-top:8px;}
+#app{display:none;min-height:100vh;}
+.sidebar{position:fixed;top:0;left:0;height:100vh;width:240px;background:var(--ink);display:flex;flex-direction:column;z-index:100;}
+.sidebar-logo{padding:20px 20px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,0.08);}
+.sidebar-logo-icon{width:32px;height:32px;background:var(--red);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.sidebar-logo-text{font-size:15px;font-weight:600;color:#fff;line-height:1.2;}
+.sidebar-logo-sub{font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:1px;}
+.sidebar-nav{padding:16px 12px;flex:1;overflow-y:auto;}
+.nav-section{font-size:10px;font-weight:500;color:rgba(255,255,255,0.3);letter-spacing:1.5px;text-transform:uppercase;padding:4px 8px;margin:12px 0 4px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);font-size:13.5px;color:rgba(255,255,255,0.6);cursor:pointer;transition:all 0.15s;margin-bottom:2px;}
+.nav-item:hover{background:rgba(255,255,255,0.07);color:#fff;}
+.nav-item.active{background:rgba(230,57,70,0.2);color:#fff;}
+.nav-icon{font-size:16px;width:20px;text-align:center;}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:2px 6px;border-radius:10px;}
+.sidebar-user{padding:14px 16px;border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:10px;}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;flex-shrink:0;}
+.user-info{flex:1;min-width:0;}
+.user-name{font-size:13px;font-weight:500;color:#fff;}
+.user-role{font-size:11px;color:rgba(255,255,255,0.4);}
+.logout-btn{font-size:13px;cursor:pointer;color:rgba(255,255,255,0.4);transition:color 0.2s;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:4px;}
+.logout-btn:hover{color:#fff;border-color:rgba(255,255,255,0.4);}
+.main-content{margin-left:240px;padding:28px 32px;}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:12px;}
+.page-header-actions{display:flex;gap:8px;flex-shrink:0;}
+.page-title{font-size:22px;font-weight:600;color:var(--ink);}
+.page-subtitle{font-size:13px;color:var(--ink-soft);margin-top:2px;}
+.btn{padding:9px 18px;border-radius:var(--radius-sm);border:none;font-size:13.5px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:var(--red);color:#fff;}
+.btn-primary:hover{background:var(--red-dark);}
+.btn-secondary{background:var(--surface);color:var(--ink);border:1px solid var(--border);}
+.btn-secondary:hover{background:var(--border);}
+.btn-green{background:#15803D;color:#fff;}
+.btn-green:hover{background:#166534;}
+.btn-sm{padding:6px 12px;font-size:12px;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm);}
+.stat-icon{font-size:22px;margin-bottom:10px;}
+.stat-val{font-size:28px;font-weight:600;color:var(--ink);}
+.stat-label{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+.table-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;}
+.table-toolbar{padding:16px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.search-input{padding:8px 12px 8px 34px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink);background:var(--surface);outline:none;width:220px;transition:border-color 0.2s;}
+.search-input:focus{border-color:var(--red);}
+.search-wrap{position:relative;}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--ink-soft);}
+.filter-select{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink);background:var(--surface);outline:none;cursor:pointer;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--ink-soft);background:var(--surface);letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--ink-mid);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#FAFBFF;}
+.td-primary{color:var(--ink);font-weight:500;}
+.td-mono{font-family:'DM Mono',monospace;font-size:12px;}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap;}
+.badge-green{background:var(--green-bg);color:#15803D;}
+.badge-red{background:var(--red-bg);color:var(--red-dark);}
+.badge-amber{background:var(--amber-bg);color:#92400E;}
+.badge-blue{background:var(--blue-bg);color:#1D4ED8;}
+.badge-purple{background:var(--purple-bg);color:#7C3AED;}
+.badge-gray{background:#F3F4F6;color:#6B7280;}
+.badge-teal{background:#F0FDFA;color:#0F766E;}
+.badge-orange{background:#FFF7ED;color:#C2410C;}
+.modal-overlay{position:fixed;inset:0;background:rgba(26,26,46,0.55);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:32px 20px;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--white);border-radius:14px;width:100%;max-width:700px;box-shadow:0 20px 60px rgba(26,26,46,0.2);transform:translateY(20px);transition:transform 0.2s;}
+.modal-overlay.open .modal{transform:translateY(0);}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-size:17px;font-weight:600;}
+.modal-close{font-size:22px;cursor:pointer;color:var(--ink-soft);line-height:1;background:none;border:none;font-family:inherit;}
+.modal-close:hover{color:var(--red);}
+.modal-body{padding:24px;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-group{display:flex;flex-direction:column;}
+.form-group.full{grid-column:1/-1;}
+.form-label{font-size:12px;font-weight:500;color:var(--ink-soft);margin-bottom:5px;}
+.form-input,.form-select,.form-textarea{padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13.5px;font-family:'DM Sans',sans-serif;color:var(--ink);background:var(--white);outline:none;transition:border-color 0.2s;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--red);}
+.form-textarea{resize:vertical;min-height:80px;}
+.pipeline{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;}
+.pipeline-col{flex:0 0 210px;}
+.pipeline-col-header{padding:9px 12px;border-radius:var(--radius-sm) var(--radius-sm) 0 0;font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
+.pipeline-cards{background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);padding:8px;min-height:160px;}
+.pipeline-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px;margin-bottom:8px;cursor:pointer;transition:box-shadow 0.15s,border-color 0.15s;}
+.pipeline-card:hover{box-shadow:var(--shadow-md);border-color:var(--red);}
+.pc-name{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:3px;}
+.pc-req{font-size:11px;color:var(--ink-soft);margin-bottom:5px;}
+.pc-dates{font-size:10px;color:var(--ink-soft);line-height:1.6;}
+.pc-footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px;}
+.col-received{background:var(--blue-bg);color:#1D4ED8;}
+.col-screening{background:var(--purple-bg);color:#7C3AED;}
+.col-selected{background:#F0FDFA;color:#0F766E;}
+.col-submitted{background:var(--amber-bg);color:#92400E;}
+.col-interview{background:#FFF7ED;color:#C2410C;}
+.col-offer{background:var(--green-bg);color:#15803D;}
+.col-placed{background:#F0FDF4;color:#14532D;}
+.col-rejected{background:var(--red-bg);color:var(--red-dark);}
+.action-btns{display:flex;gap:5px;flex-wrap:wrap;}
+.action-btn{background:none;border:1px solid var(--border);border-radius:5px;padding:4px 8px;cursor:pointer;font-size:11px;color:var(--ink-soft);transition:all 0.15s;white-space:nowrap;}
+.action-btn:hover{border-color:var(--red);color:var(--red);}
+.action-btn.green:hover{border-color:#15803D;color:#15803D;}
+.empty-state{text-align:center;padding:40px 24px;color:var(--ink-soft);}
+.empty-state-icon{font-size:36px;margin-bottom:10px;}
+.empty-state-text{font-size:14px;font-weight:500;color:var(--ink-mid);margin-bottom:4px;}
+.table-wrap{overflow-x:auto;}
+.hidden{display:none !important;}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:12px 20px;border-radius:var(--radius-sm);font-size:13px;z-index:9999;transform:translateY(100px);transition:transform 0.3s;box-shadow:var(--shadow-md);}
+.toast.show{transform:translateY(0);}
+.toast.success{background:#15803D;}
+.toast.error{background:var(--red-dark);}
+.resume-link{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#1D4ED8;cursor:pointer;text-decoration:none;padding:3px 8px;border:1px solid #BFDBFE;border-radius:4px;background:var(--blue-bg);}
+.resume-link:hover{background:#DBEAFE;}
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:border-color 0.2s;background:var(--surface);}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--red);background:var(--red-bg);}
+.upload-zone-text{font-size:13px;color:var(--ink-soft);margin-top:6px;}
+.upload-zone-sub{font-size:11px;color:var(--ink-soft);margin-top:3px;}
+.vendor-check-list{max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px;}
+.vendor-check-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:5px;cursor:pointer;transition:background 0.1s;}
+.vendor-check-item:hover{background:var(--surface);}
+.vendor-check-item input[type="checkbox"]{width:15px;height:15px;accent-color:var(--red);cursor:pointer;flex-shrink:0;}
+.vendor-check-name{font-size:13px;font-weight:500;color:var(--ink);}
+.vendor-check-poc{font-size:11px;color:var(--ink-soft);}
+.email-preview{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;font-size:13px;line-height:1.7;color:var(--ink-mid);max-height:280px;overflow-y:auto;white-space:pre-wrap;font-family:'DM Mono',monospace;}
+.tab-row{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.tab{padding:9px 18px;font-size:13.5px;font-weight:500;color:var(--ink-soft);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;margin-bottom:-1px;}
+.tab.active{color:var(--red);border-bottom-color:var(--red);}
+.tab:hover:not(.active){color:var(--ink);}
+.jd-preview{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--ink-mid);line-height:1.6;max-height:80px;overflow:hidden;cursor:pointer;position:relative;}
+.jd-preview::after{content:'Click to expand';position:absolute;bottom:0;left:0;right:0;text-align:center;background:linear-gradient(transparent,var(--surface) 60%);padding:12px 0 4px;font-size:11px;color:var(--ink-soft);}
+.pipeline-card[draggable]{cursor:grab;}
+.pipeline-card[draggable]:active{cursor:grabbing;}
+.pipeline-card.dragging{opacity:0.4;transform:scale(0.97);}
+.pipeline-cards.drag-over{background:#EFF6FF;border-color:#93C5FD;outline:2px dashed #3B82F6;outline-offset:-2px;}
+.pipeline-cards.drag-over-reject{background:var(--red-bg);outline:2px dashed var(--red);outline-offset:-2px;}
+.drag-hint{font-size:10px;color:var(--ink-soft);text-align:center;padding:6px 0 2px;letter-spacing:0.3px;}
+.view-toggle{display:flex;gap:4px;margin-left:auto;}
+.view-toggle-btn{padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink-soft);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.view-toggle-btn.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+.stage-select-inline{font-size:12px;font-family:'DM Sans',sans-serif;border:1px solid var(--border);border-radius:4px;padding:3px 6px;background:var(--white);color:var(--ink);cursor:pointer;outline:none;width:100%;}
+.stage-select-inline:focus{border-color:var(--red);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">&#128308;</div>
+      <div><div class="login-logo-text">RedPluto</div><div class="login-logo-sub">Analytics</div></div>
+    </div>
+    <div class="login-title">Welcome back</div>
+    <div class="login-sub">Sign in to your staffing workspace</div>
+    <div class="login-label">EMAIL</div>
+    <input class="login-input" id="login-user" placeholder="you@redpluto.com" type="email" />
+    <div class="login-label">PASSWORD</div>
+    <input class="login-input" id="login-pass" type="password" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()" />
+    <div class="login-error hidden" id="login-error">Invalid credentials. Try again.</div>
+    <button class="login-btn" id="login-submit-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-users">
+      <div class="login-users-label">Demo accounts (no Supabase needed)</div>
+      <div class="user-pills">
+        <div class="user-pill" onclick="quickLogin('admin@redpluto.com','Admin123')">Admin</div>
+        <div class="user-pill" onclick="quickLogin('priya@redpluto.com','Pass123')">Recruiter 1</div>
+        <div class="user-pill" onclick="quickLogin('rahul@redpluto.com','Pass123')">Recruiter 2</div>
+        <div class="user-pill" onclick="quickLogin('amit@redpluto.com','Pass123')">Manager</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="global-loader" style="display:none;position:fixed;inset:0;background:rgba(255,255,255,0.85);z-index:9998;align-items:center;justify-content:center;flex-direction:column;gap:12px">
+  <div style="width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin 0.7s linear infinite"></div>
+  <div style="font-size:13px;color:var(--ink-soft)">Loading data...</div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+<!-- APP -->
+<div id="app">
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">&#128308;</div>
+      <div><div class="sidebar-logo-text">RedPluto</div><div class="sidebar-logo-sub">IT STAFFING CRM</div></div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">&#128202;</span> Dashboard</div>
+      <div class="nav-section">Pipeline</div>
+      <div class="nav-item" onclick="showPage('requirements',this)"><span class="nav-icon">&#128203;</span> Requirements <span class="nav-badge" id="req-badge">0</span></div>
+      <div class="nav-item" onclick="showPage('pipeline',this)"><span class="nav-icon">&#128260;</span> Pipeline View</div>
+      <div class="nav-section">People</div>
+      <div class="nav-item" onclick="showPage('candidates',this)"><span class="nav-icon">&#128100;</span> Candidates</div>
+      <div class="nav-item" onclick="showPage('partners',this)"><span class="nav-icon">&#129309;</span> Partners</div>
+      <div class="nav-section">Communication</div>
+      <div class="nav-item" onclick="showPage('email',this)"><span class="nav-icon">&#128140;</span> Send Requirement Email</div>
+      <div class="nav-section">Reports</div>
+      <div class="nav-item" onclick="showPage('activity',this)"><span class="nav-icon">&#128200;</span> Activity Log</div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="user-avatar-sidebar">A</div>
+      <div class="user-info">
+        <div class="user-name" id="user-name-sidebar">Admin</div>
+        <div class="user-role" id="user-role-sidebar">Administrator</div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="main-content">
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page">
+      <div class="page-header">
+        <div><div class="page-title">Dashboard</div><div class="page-subtitle" id="dash-welcome">Welcome!</div></div>
+        <div class="page-header-actions">
+          <button class="btn btn-secondary btn-sm" onclick="showPage('email')">Send Requirement Email</button>
+          <button class="btn btn-primary" onclick="showPage('requirements');setTimeout(function(){openReqModal();},100)">+ New Requirement</button>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-icon">&#128203;</div><div class="stat-val" id="stat-total-req">0</div><div class="stat-label">Open Requirements</div></div>
+        <div class="stat-card"><div class="stat-icon">&#128100;</div><div class="stat-val" id="stat-total-cand">0</div><div class="stat-label">Candidates in Pipeline</div></div>
+        <div class="stat-card"><div class="stat-icon">&#9203;</div><div class="stat-val" id="stat-screening">0</div><div class="stat-label">Pending Screening</div></div>
+        <div class="stat-card"><div class="stat-icon">&#9989;</div><div class="stat-val" id="stat-placed">0</div><div class="stat-label">Positions Closed</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div class="table-card">
+          <div class="table-toolbar" style="padding:14px 18px"><div style="font-size:14px;font-weight:600">Recent Requirements</div></div>
+          <div class="table-wrap"><table><thead><tr><th>Role</th><th>Partner</th><th>Status</th></tr></thead><tbody id="dash-req-table"></tbody></table></div>
+        </div>
+        <div class="table-card">
+          <div class="table-toolbar" style="padding:14px 18px"><div style="font-size:14px;font-weight:600">Recent Candidates</div></div>
+          <div class="table-wrap"><table><thead><tr><th>Candidate</th><th>Role</th><th>Stage</th></tr></thead><tbody id="dash-cand-table"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REQUIREMENTS -->
+    <div id="page-requirements" class="page hidden">
+      <div class="page-header">
+        <div><div class="page-title">Requirements</div><div class="page-subtitle">All staffing requirements from partners</div></div>
+        <button class="btn btn-primary" onclick="openReqModal()">+ Add Requirement</button>
+      </div>
+      <div class="table-card">
+        <div class="table-toolbar">
+          <div class="search-wrap"><span class="search-icon">&#128269;</span><input class="search-input" placeholder="Search..." oninput="renderRequirements(this.value)" /></div>
+          <select class="filter-select" onchange="renderRequirements('',this.value)"><option value="">All Status</option><option>Open</option><option>In Progress</option><option>Closed</option><option>On Hold</option></select>
+          <select class="filter-select" id="req-partner-filter" onchange="renderRequirements('','',this.value)"><option value="">All Partners</option></select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Role / Position</th><th>Partner</th><th>Date</th><th>Pos</th><th>Exp</th><th>Duration</th><th>Location</th><th>RP Rate</th><th>Status</th><th>JD</th><th>Actions</th></tr></thead>
+            <tbody id="req-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PIPELINE -->
+    <div id="page-pipeline" class="page hidden">
+      <div class="page-header">
+        <div><div class="page-title">Pipeline View</div><div class="page-subtitle">Click any candidate card to update stage and interview details</div></div>
+      </div>
+      <div class="table-toolbar" style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:20px;border-radius:var(--radius);">
+        <select class="filter-select" onchange="renderPipeline()" id="pipeline-req-filter"><option value="">All Requirements</option></select>
+        <select class="filter-select" onchange="renderPipeline()" id="pipeline-client-filter"><option value="">All Clients</option></select>
+        <select class="filter-select" onchange="renderPipeline()" id="pipeline-vendor-filter"><option value="">All Vendors</option></select>
+        <select class="filter-select" onchange="renderPipeline()" id="pipeline-stage-filter"><option value="">All Stages</option><option>Profile Received</option><option>Screening Scheduled</option><option>Selected</option><option>Submitted to Client</option><option>Client Interview</option><option>Offer</option><option>Placed</option><option>Rejected</option></select>
+        <div class="view-toggle">
+          <button class="view-toggle-btn active" id="pl-view-card" onclick="setPipelineView('card')" title="Card view">&#9707; Card</button>
+          <button class="view-toggle-btn" id="pl-view-list" onclick="setPipelineView('list')" title="List view">&#9776; List</button>
+        </div>
+      </div>
+      <div id="pipeline-board"></div>
+    </div>
+
+    <!-- CANDIDATES -->
+    <div id="page-candidates" class="page hidden">
+      <div class="page-header">
+        <div><div class="page-title">Candidates</div><div class="page-subtitle">All candidates across requirements</div></div>
+        <button class="btn btn-primary" onclick="openCandModal()">+ Add Candidate</button>
+      </div>
+      <div class="table-card">
+        <div class="table-toolbar">
+          <div class="search-wrap"><span class="search-icon">&#128269;</span><input class="search-input" placeholder="Search candidates..." oninput="renderCandidates(this.value)" /></div>
+          <select class="filter-select" onchange="renderCandidates('',this.value)"><option value="">All Stages</option><option>Profile Received</option><option>Screening Scheduled</option><option>Selected</option><option>Submitted to Client</option><option>Client Interview</option><option>Offer</option><option>Placed</option><option>Rejected</option></select>
+          <select class="filter-select" id="cand-partner-filter" onchange="renderCandidates('','',this.value)"><option value="">All Partners</option></select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Name</th><th>Resume</th><th>Partner</th><th>Role Applied</th><th>Exp</th><th>Location</th><th>Availability</th><th>Rate</th><th>Actions</th></tr></thead>
+            <tbody id="cand-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARTNERS -->
+    <div id="page-partners" class="page hidden">
+      <div class="page-header">
+        <div><div class="page-title">Partners</div><div class="page-subtitle">Clients who send requirements and vendors who supply candidates</div></div>
+        <button class="btn btn-primary" onclick="openPartnerModal()">+ Add Partner</button>
+      </div>
+      <div class="table-card">
+        <div class="table-toolbar">
+          <div class="search-wrap"><span class="search-icon">&#128269;</span><input class="search-input" placeholder="Search partners..." oninput="renderPartners(this.value)" /></div>
+          <select class="filter-select" onchange="renderPartners('',this.value)"><option value="">All Types</option><option value="client">Client</option><option value="vendor">Vendor</option><option value="both">Both</option></select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Company</th><th>POC Name</th><th>Contact</th><th>Type</th><th>Open Reqs</th><th>Candidates</th><th>Actions</th></tr></thead>
+            <tbody id="partner-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEND EMAIL PAGE -->
+    <div id="page-email" class="page hidden">
+      <div class="page-header">
+        <div><div class="page-title">Send Requirement Email</div><div class="page-subtitle">Share open requirements with vendor partners</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+        <div>
+          <div class="table-card" style="margin-bottom:16px">
+            <div class="table-toolbar" style="padding:16px 20px;border-bottom:1px solid var(--border)"><div style="font-size:14px;font-weight:600">1. Select Requirement</div></div>
+            <div style="padding:16px 20px">
+              <select class="form-select" id="email-req-select" onchange="onEmailReqChange()" style="width:100%"><option value="">Select a requirement...</option></select>
+              <div id="email-req-preview" class="hidden" style="margin-top:12px;padding:12px;background:var(--surface);border-radius:var(--radius-sm);font-size:13px;line-height:1.8;border:1px solid var(--border)"></div>
+            </div>
+          </div>
+          <div class="table-card">
+            <div class="table-toolbar" style="padding:16px 20px;border-bottom:1px solid var(--border)">
+              <div style="font-size:14px;font-weight:600">2. Select Vendors</div>
+              <button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="selectAllVendors()">Select All</button>
+              <button class="btn btn-secondary btn-sm" onclick="clearVendors()">Clear</button>
+            </div>
+            <div style="padding:12px 16px">
+              <div class="vendor-check-list" id="vendor-check-list"></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="table-card">
+            <div class="table-toolbar" style="padding:16px 20px;border-bottom:1px solid var(--border)"><div style="font-size:14px;font-weight:600">3. Email Preview</div></div>
+            <div style="padding:16px 20px">
+              <div class="form-group" style="margin-bottom:12px">
+                <label class="form-label">Subject</label>
+                <input class="form-input" id="email-subject" placeholder="Email subject..." />
+              </div>
+              <div class="form-group" style="margin-bottom:16px">
+                <label class="form-label">Message Body (editable)</label>
+                <textarea class="form-textarea" id="email-body" style="min-height:260px;font-family:'DM Mono',monospace;font-size:12px;line-height:1.7"></textarea>
+              </div>
+              <div id="email-jd-section" class="hidden" style="margin-bottom:16px;padding:12px 14px;background:var(--blue-bg);border:1px solid #BFDBFE;border-radius:var(--radius-sm);display:flex;align-items:center;gap:12px">
+                <span style="font-size:20px">&#128196;</span>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:500;color:#1D4ED8" id="email-jd-name">JD.pdf</div>
+                  <div style="font-size:11px;color:var(--ink-soft)">Job Description — download to attach to your email</div>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="email-jd-download-btn">Download JD PDF</button>
+              </div>
+              <div style="display:flex;gap:8px;justify-content:flex-end">
+                <button class="btn btn-secondary" onclick="regenerateEmail()">Regenerate</button>
+                <button class="btn btn-green" onclick="sendEmailToVendors()">Mark as Sent</button>
+                <button class="btn btn-primary" onclick="copyEmailToClipboard()">Copy Email</button>
+              </div>
+              <div id="email-sent-list" style="margin-top:12px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTIVITY -->
+    <div id="page-activity" class="page hidden">
+      <div class="page-header"><div><div class="page-title">Activity Log</div><div class="page-subtitle">Full audit trail</div></div></div>
+      <div class="table-card">
+        <div class="table-wrap"><table><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody id="activity-table"></tbody></table></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- REQUIREMENT MODAL -->
+<div class="modal-overlay" id="req-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="req-modal-title">Add Requirement</div>
+      <button class="modal-close" onclick="closeModal('req-modal')">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <div class="tab-row">
+        <div class="tab active" onclick="switchReqTab('basic',this)">Basic Info</div>
+        <div class="tab" onclick="switchReqTab('jd',this)">Job Description</div>
+      </div>
+      <div id="req-tab-basic">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Role / Position *</label><input class="form-input" id="req-role" placeholder="e.g. iOS/Android Lead" /></div>
+          <div class="form-group"><label class="form-label">Partner (Client) *</label><select class="form-select" id="req-partner" onchange="onReqPartnerChange()"><option value="">Select partner...</option></select></div>
+          <div class="form-group"><label class="form-label">Partner Contact</label><input class="form-input" id="req-contact" placeholder="Auto-filled from partner" /></div>
+          <div class="form-group"><label class="form-label">Requirement Date</label><input class="form-input" id="req-date" type="date" /></div>
+          <div class="form-group"><label class="form-label">No. of Positions</label><input class="form-input" id="req-positions" type="number" placeholder="1" min="1" /></div>
+          <div class="form-group"><label class="form-label">Required Experience</label><input class="form-input" id="req-exp" placeholder="e.g. 5-7 years" /></div>
+          <div class="form-group"><label class="form-label">Location</label><input class="form-input" id="req-location" placeholder="e.g. Remote, Bangalore" /></div>
+          <div class="form-group"><label class="form-label">Client Rate Card</label><input class="form-input" id="req-rate-client" placeholder="e.g. Open / 5 LPM" /></div>
+          <div class="form-group"><label class="form-label">RedPluto Rate Card</label><input class="form-input" id="req-rate-redpluto" placeholder="e.g. 3.5 LPM" /></div>
+          <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="req-status"><option>Open</option><option>In Progress</option><option>On Hold</option><option>Closed</option></select></div>
+          <div class="form-group full"><label class="form-label">Contract Duration</label><input class="form-input" id="req-duration" placeholder="e.g. 6 months, 1 year, Permanent" /></div>
+          <div class="form-group full"><label class="form-label">Comments</label><textarea class="form-textarea" id="req-comments" placeholder="Any notes or context..."></textarea></div>
+        </div>
+      </div>
+      <div id="req-tab-jd" class="hidden">
+        <div class="form-group">
+          <label class="form-label">Job Description</label>
+          <textarea class="form-textarea" id="req-jd" style="min-height:320px" placeholder="Paste or type the full job description here...&#10;&#10;Responsibilities:&#10;- ...&#10;&#10;Requirements:&#10;- ...&#10;&#10;Nice to have:&#10;- ..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('req-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRequirement()">Save Requirement</button>
+    </div>
+  </div>
+</div>
+
+<!-- CANDIDATE MODAL -->
+<div class="modal-overlay" id="cand-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="cand-modal-title">Add Candidate</div>
+      <button class="modal-close" onclick="closeModal('cand-modal')">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Candidate Name *</label><input class="form-input" id="cand-name" placeholder="Full name" /></div>
+        <div class="form-group"><label class="form-label">Requirement</label><select class="form-select" id="cand-req"><option value="">Select requirement...</option></select></div>
+        <div class="form-group"><label class="form-label">Partner Company</label><select class="form-select" id="cand-partner" onchange="onCandPartnerChange()"><option value="">Select partner...</option></select></div>
+        <div class="form-group"><label class="form-label">POC Name</label><input class="form-input" id="cand-vendor-poc" placeholder="Auto-filled from partner" /></div>
+        <div class="form-group"><label class="form-label">POC Contact</label><input class="form-input" id="cand-poc-contact" placeholder="Auto-filled from partner" /></div>
+        <div class="form-group"><label class="form-label">Resume Received Date</label><input class="form-input" id="cand-resume-date" type="date" /></div>
+        <div class="form-group"><label class="form-label">Experience (Years)</label><input class="form-input" id="cand-exp" placeholder="e.g. 5" type="number" step="0.5" /></div>
+        <div class="form-group"><label class="form-label">Candidate Location</label><input class="form-input" id="cand-location" placeholder="City" /></div>
+        <div class="form-group"><label class="form-label">Availability</label><input class="form-input" id="cand-availability" placeholder="Immediate / 30 days" /></div>
+        <div class="form-group"><label class="form-label">Partner Rate Card</label><input class="form-input" id="cand-vendor-rate" placeholder="e.g. 2.4 LPM" /></div>
+        <div class="form-group full">
+          <label class="form-label">Resume Upload (PDF)</label>
+          <div class="upload-zone" id="resume-upload-zone" onclick="document.getElementById('resume-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleResumeDrop(event)">
+            <div style="font-size:28px">&#128196;</div>
+            <div class="upload-zone-text" id="resume-upload-text">Click to upload or drag &amp; drop resume</div>
+            <div class="upload-zone-sub">PDF, DOC, DOCX up to 5MB</div>
+          </div>
+          <input type="file" id="resume-file-input" accept=".pdf,.doc,.docx" style="display:none" onchange="handleResumeUpload(this)" />
+        </div>
+        <div class="form-group full"><label class="form-label">Comments</label><textarea class="form-textarea" id="cand-comments" placeholder="Notes..."></textarea></div>
+      </div>
+      <div style="margin-top:12px;padding:12px;background:var(--blue-bg);border-radius:var(--radius-sm);font-size:12px;color:#1D4ED8">
+        Interview details and stage updates are managed from the Pipeline View.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('cand-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCandidate()">Save Candidate</button>
+    </div>
+  </div>
+</div>
+
+<!-- PIPELINE UPDATE MODAL -->
+<div class="modal-overlay" id="pipeline-modal">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="pl-modal-name">Candidate</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:2px" id="pl-modal-req"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('pipeline-modal')">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">RedPluto Interview Date</label><input class="form-input" id="pl-rp-date" type="date" /></div>
+        <div class="form-group"><label class="form-label">RedPluto Interview Status</label><select class="form-select" id="pl-rp-status"><option value="">Pending</option><option value="Selected">Selected</option><option value="Rejected">Rejected</option><option value="On Hold">On Hold</option></select></div>
+        <div class="form-group"><label class="form-label">Date Submitted to Client</label><input class="form-input" id="pl-submit-date" type="date" /></div>
+        <div class="form-group"><label class="form-label">Client Interview Date</label><input class="form-input" id="pl-client-date" type="date" /></div>
+        <div class="form-group full"><label class="form-label">Client Interview Status</label><select class="form-select" id="pl-client-status"><option value="">Pending</option><option value="Scheduled">Scheduled</option><option value="Completed">Completed</option><option value="Selected">Selected</option><option value="Rejected">Rejected</option><option value="Waiting for Client">Waiting for Client</option></select></div>
+        <div class="form-group full"><label class="form-label">Overall Stage</label><select class="form-select" id="pl-stage"><option>Profile Received</option><option>Screening Scheduled</option><option>Selected</option><option>Submitted to Client</option><option>Client Interview</option><option>Offer</option><option>Placed</option><option>Rejected</option></select></div>
+        <div class="form-group full"><label class="form-label">Comments</label><textarea class="form-textarea" id="pl-comments" placeholder="Update notes..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('pipeline-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePipelineUpdate()">Update Stage</button>
+    </div>
+  </div>
+</div>
+
+<!-- PARTNER MODAL -->
+<div class="modal-overlay" id="partner-modal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <div class="modal-title" id="partner-modal-title">Add Partner</div>
+      <button class="modal-close" onclick="closeModal('partner-modal')">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label class="form-label">Company Name *</label><input class="form-input" id="p-name" placeholder="Company name" /></div>
+        <div class="form-group"><label class="form-label">POC Name</label><input class="form-input" id="p-poc" placeholder="Primary contact person" /></div>
+        <div class="form-group"><label class="form-label">Phone / Email</label><input class="form-input" id="p-contact" placeholder="Contact details" /></div>
+        <div class="form-group full"><label class="form-label">Partner Type</label><select class="form-select" id="p-type"><option value="client">Client (sends requirements)</option><option value="vendor">Vendor (supplies candidates)</option><option value="both">Both (client and vendor)</option></select></div>
+        <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" id="p-notes" placeholder="Domain, specialization, notes..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('partner-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePartner()">Save Partner</button>
+    </div>
+  </div>
+</div>
+
+<!-- JD VIEW MODAL -->
+<div class="modal-overlay" id="jd-modal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <div class="modal-title" id="jd-modal-title">Job Description</div>
+      <button class="modal-close" onclick="closeModal('jd-modal')">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <pre id="jd-modal-body" style="white-space:pre-wrap;font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.8;color:var(--ink-mid);max-height:60vh;overflow-y:auto"></pre>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('jd-modal')">Close</button></div>
+  </div>
+</div>
+
+<!-- RESUME VIEW MODAL -->
+<div class="modal-overlay" id="resume-modal">
+  <div class="modal" style="max-width:800px">
+    <div class="modal-header">
+      <div class="modal-title" id="resume-modal-title">Resume</div>
+      <button class="modal-close" onclick="closeModal('resume-modal')">&#215;</button>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <iframe id="resume-iframe" style="width:100%;height:70vh;border:none;border-radius:0 0 14px 14px"></iframe>
+      <div id="resume-no-preview" class="hidden" style="padding:40px;text-align:center;color:var(--ink-soft)">
+        <div style="font-size:40px;margin-bottom:12px">&#128196;</div>
+        <div style="font-size:14px;font-weight:500;color:var(--ink-mid)" id="resume-filename-display"></div>
+        <div style="font-size:12px;margin-top:8px">Preview not available for this file type.</div>
+        <button class="btn btn-primary" style="margin-top:16px" id="resume-download-btn">Download Resume</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* -- AUTH -- */
+var currentUser = null;
+var SB_READY = false;
+
+function quickLogin(u,p){document.getElementById('login-user').value=u;document.getElementById('login-pass').value=p;doLogin();}
+
+async function doLogin(){
+  var email = document.getElementById('login-user').value.trim();
+  var pass  = document.getElementById('login-pass').value;
+  if(!email||!pass){document.getElementById('login-error').textContent='Enter email and password.';document.getElementById('login-error').classList.remove('hidden');return;}
+
+  setLoginLoading(true);
+
+  if(!SB_READY){
+    /* Demo mode fallback */
+    var DEMO={
+      'admin@redpluto.com':    {pass:'Admin123',name:'Admin User',   role:'Administrator',initials:'AU'},
+      'priya@redpluto.com':    {pass:'Pass123', name:'Priya Sharma', role:'Recruiter',     initials:'PS'},
+      'rahul@redpluto.com':    {pass:'Pass123', name:'Rahul Mehta',  role:'Recruiter',     initials:'RM'},
+      'amit@redpluto.com':     {pass:'Pass123', name:'Amit Singh',   role:'Manager',       initials:'AS'}
+    };
+    var d=DEMO[email.toLowerCase()];
+    if(d&&d.pass===pass){
+      currentUser={email:email,name:d.name,role:d.role,initials:d.initials};
+      onLoginSuccess();loadAllData();
+    } else {
+      showLoginError('Invalid credentials.');
+    }
+    setLoginLoading(false);
+    return;
+  }
+
+  var res = await supabase.auth.signInWithPassword({email:email,password:pass});
+  setLoginLoading(false);
+  if(res.error){showLoginError(res.error.message);return;}
+  var meta = res.data.user.user_metadata||{};
+  currentUser = {
+    email: res.data.user.email,
+    name:  meta.full_name || res.data.user.email,
+    role:  meta.role || 'Recruiter',
+    initials: (meta.full_name||res.data.user.email).slice(0,2).toUpperCase()
+  };
+  onLoginSuccess();
+  loadAllData();
+}
+
+function setLoginLoading(on){
+  var btn=document.getElementById('login-submit-btn');
+  btn.textContent=on?'Signing in...':'Sign In';
+  btn.disabled=on;
+}
+function showLoginError(msg){
+  document.getElementById('login-error').textContent=msg;
+  document.getElementById('login-error').classList.remove('hidden');
+}
+
+function onLoginSuccess(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('user-avatar-sidebar').textContent=currentUser.initials;
+  document.getElementById('user-name-sidebar').textContent=currentUser.name;
+  document.getElementById('user-role-sidebar').textContent=currentUser.role;
+  var h=new Date().getHours();
+  var g=h<12?'Good morning':(h<17?'Good afternoon':'Good evening');
+  document.getElementById('dash-welcome').textContent=g+', '+currentUser.name+'!';
+  if(!SB_READY) showToast('Demo mode — Supabase not configured','');
+}
+
+async function doLogout(){
+  await logActivity('Logout',currentUser.name+' signed out');
+  if(SB_READY) await supabase.auth.signOut();
+  currentUser=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-error').classList.add('hidden');
+  db={requirements:[],candidates:[],partners:[],activity:[]};
+}
+
+/* -- DATA STORE -- */
+var db={requirements:[],candidates:[],partners:[],activity:[]};
+var editingId={req:null,cand:null,partner:null,pipeline:null};
+
+/* -- SUPABASE CRUD HELPERS -- */
+async function sbFetch(table,order){
+  if(!SB_READY) return null;
+  var q=supabase.from(table).select('*');
+  if(order) q=q.order(order,{ascending:false});
+  var {data,error}=await q;
+  if(error){console.error(table,error);return null;}
+  return data;
+}
+async function sbInsert(table,row){
+  if(!SB_READY) return null;
+  var {data,error}=await supabase.from(table).insert(row).select().single();
+  if(error){console.error('insert',table,error);showToast('Save failed: '+error.message,'error');return null;}
+  return data;
+}
+async function sbUpdate(table,id,row){
+  if(!SB_READY) return null;
+  var {data,error}=await supabase.from(table).update(row).eq('id',id).select().single();
+  if(error){console.error('update',table,error);showToast('Update failed: '+error.message,'error');return null;}
+  return data;
+}
+async function sbDelete(table,id){
+  if(!SB_READY) return false;
+  var {error}=await supabase.from(table).delete().eq('id',id);
+  if(error){console.error('delete',table,error);showToast('Delete failed: '+error.message,'error');return false;}
+  return true;
+}
+
+/* -- LOAD ALL DATA -- */
+async function loadAllData(){
+  showGlobalLoader(true);
+  if(SB_READY){
+    var [partners,reqs,cands,activity]=await Promise.all([
+      sbFetch('partners','name'),
+      sbFetch('requirements','created_at'),
+      sbFetch('candidates','created_at'),
+      sbFetch('activity_log','created_at')
+    ]);
+    if(partners) db.partners=partners.map(mapPartner);
+    if(reqs)     db.requirements=reqs.map(mapReq);
+    if(cands)    db.candidates=cands.map(mapCand);
+    if(activity) db.activity=activity.map(mapActivity);
+  } else {
+    loadSampleData();
+  }
+  showGlobalLoader(false);
+  renderDashboard();
+}
+
+/* -- DB ROW MAPPERS (snake_case DB -> camelCase app) -- */
+function mapPartner(r){return {id:r.id,name:r.name,poc:r.poc_name||'',contact:r.contact||'',type:r.partner_type||'client',notes:r.notes||''};}
+function mapReq(r){return {id:r.id,role:r.role,partnerId:r.partner_id||'',contact:r.contact_name||'',date:r.req_date||'',positions:r.positions||1,exp:r.experience||'',duration:r.duration||'',location:r.location||'',rateClient:r.rate_client||'',rateRP:r.rate_redpluto||'',status:r.status||'Open',comments:r.comments||'',jd:r.job_description||''};}
+function mapCand(r){return {id:r.id,name:r.name,reqId:r.requirement_id||'',partnerId:r.partner_id||'',vendorPoc:r.vendor_poc||'',pocContact:r.poc_contact||'',resumeDate:r.resume_date||'',exp:r.experience||0,location:r.location||'',availability:r.availability||'',vendorRate:r.vendor_rate||'',resumeFile:null,rpDate:r.rp_interview_date||'',rpStatus:r.rp_interview_status||'',submitDate:r.submit_date||'',clientDate:r.client_interview_date||'',clientStatus:r.client_interview_status||'',stage:r.stage||'Profile Received',comments:r.comments||''};}
+function mapActivity(r){return {id:r.id,time:new Date(r.created_at).toLocaleString('en-IN'),user:r.user_name||'',action:r.action||'',detail:r.detail||''};}
+
+/* -- REVERSE MAPPERS (camelCase app -> snake_case DB) -- */
+function unmapPartner(d){return {name:d.name,poc_name:d.poc,contact:d.contact,partner_type:d.type,notes:d.notes};}
+function unmapReq(d){return {role:d.role,partner_id:d.partnerId,contact_name:d.contact,req_date:d.date||null,positions:parseInt(d.positions)||1,experience:d.exp,duration:d.duration,location:d.location,rate_client:d.rateClient,rate_redpluto:d.rateRP,status:d.status,comments:d.comments,job_description:d.jd};}
+function unmapCand(d){return {name:d.name,requirement_id:d.reqId||null,partner_id:d.partnerId||null,vendor_poc:d.vendorPoc,poc_contact:d.pocContact,resume_date:d.resumeDate||null,experience:parseFloat(d.exp)||0,location:d.location,availability:d.availability,vendor_rate:d.vendorRate,rp_interview_date:d.rpDate||null,rp_interview_status:d.rpStatus,submit_date:d.submitDate||null,client_interview_date:d.clientDate||null,client_interview_status:d.clientStatus,stage:d.stage,comments:d.comments};}
+
+function loadSampleData(){
+  db.partners=[
+    {id:'p1',name:'Entermind',   poc:'Sourabh', contact:'sourabh@entermind.com',  type:'client',notes:''},
+    {id:'p2',name:'Winlentech',  poc:'Balaji',  contact:'balaji@winlentech.com',   type:'client',notes:''},
+    {id:'p3',name:'Circledv',    poc:'Vignesh', contact:'vignesh@circledv.com',    type:'client',notes:'Chennai based'},
+    {id:'p4',name:'Innolytics',  poc:'Pallavi', contact:'9168984448',              type:'vendor',notes:''},
+    {id:'p5',name:'Technotackel',poc:'Sukumar', contact:'8637646693',              type:'vendor',notes:''}
+  ];
+  db.requirements=[
+    {id:'r1',role:'iOS / Android Lead',  partnerId:'p1',contact:'Sourabh',date:'2025-09-23',positions:2,exp:'5-7',duration:'6 months',location:'Remote',  rateClient:'Open',rateRP:'3.5 LPM',status:'Closed',  comments:'',jd:'Looking for an experienced iOS/Android Lead.\n\nRequirements:\n- 5+ years iOS/Android\n- Swift, Kotlin\n- REST APIs\n- Team leadership'},
+    {id:'r2',role:'AI Engineer',         partnerId:'p1',contact:'Sourabh',date:'2025-09-23',positions:2,exp:'5-7',duration:'1 year',  location:'Remote',  rateClient:'Open',rateRP:'3.5 LPM',status:'Closed',  comments:'',jd:'AI Engineer with Python and ML experience.\n\nRequirements:\n- 5+ years Python\n- TensorFlow/PyTorch\n- NLP / LLM experience'},
+    {id:'r3',role:'Business Analyst',    partnerId:'p2',contact:'Balaji', date:'2025-09-29',positions:1,exp:'5-8',duration:'',        location:'Bangalore',rateClient:'Open',rateRP:'',        status:'On Hold',comments:'Hybrid role, Bangalore preferred',jd:''},
+    {id:'r4',role:'Data and ML Engineer',partnerId:'p3',contact:'Vignesh',date:'2025-10-16',positions:1,exp:'5-7',duration:'3 months',location:'Chennai', rateClient:'Open',rateRP:'Open',     status:'Closed',  comments:'',jd:'Data and ML Engineer.\n\nRequirements:\n- Python, SQL\n- Spark/Hadoop\n- Cloud (AWS/GCP)'}
+  ];
+  db.candidates=[
+    {id:'c1',name:'Jaydeep Parmar',reqId:'r1',partnerId:'p4',vendorPoc:'Pallavi',pocContact:'9168984448',resumeDate:'2025-10-16',exp:6.9,location:'Pune',availability:'30 days',vendorRate:'',resumeFile:null,rpDate:'',rpStatus:'',submitDate:'',clientDate:'',clientStatus:'',stage:'Profile Received',comments:'Profile yet to be reviewed'},
+    {id:'c2',name:'Jayant Mitra',  reqId:'r1',partnerId:'p4',vendorPoc:'Pallavi',pocContact:'9168984448',resumeDate:'2025-10-16',exp:6,  location:'',    availability:'30 days',vendorRate:'',resumeFile:null,rpDate:'',rpStatus:'',submitDate:'',clientDate:'',clientStatus:'',stage:'Profile Received',comments:'Profile yet to be reviewed'},
+    {id:'c3',name:'Swati',         reqId:'r2',partnerId:'p4',vendorPoc:'Pallavi',pocContact:'9168984448',resumeDate:'2025-09-25',exp:5,  location:'NA',  availability:'Immediate',vendorRate:'1.9 LPM',resumeFile:null,rpDate:'2025-09-25',rpStatus:'Selected',submitDate:'2025-10-06',clientDate:'',clientStatus:'Waiting for Client',stage:'Submitted to Client',comments:'Selected'},
+    {id:'c4',name:'Priyal',        reqId:'r2',partnerId:'p4',vendorPoc:'Pallavi',pocContact:'9168984448',resumeDate:'2025-09-25',exp:5,  location:'NA',  availability:'Immediate',vendorRate:'1.9 LPM',resumeFile:null,rpDate:'2025-09-25',rpStatus:'Selected',submitDate:'2025-09-26',clientDate:'',clientStatus:'Waiting for Client',stage:'Submitted to Client',comments:'Waiting for Client'},
+    {id:'c5',name:'Himanshu Godse',reqId:'r3',partnerId:'',  vendorPoc:'Shubham', pocContact:'',         resumeDate:'2025-09-30',exp:0,  location:'',    availability:'',vendorRate:'',resumeFile:null,rpDate:'',rpStatus:'',submitDate:'',clientDate:'',clientStatus:'',stage:'Screening Scheduled',comments:''},
+    {id:'c6',name:'Bhupendra',     reqId:'r4',partnerId:'p5',vendorPoc:'Sukumar', pocContact:'8637646693',resumeDate:'2025-10-24',exp:5, location:'',    availability:'',vendorRate:'2.4',resumeFile:null,rpDate:'2025-10-24',rpStatus:'Rejected',submitDate:'',clientDate:'',clientStatus:'',stage:'Rejected',comments:'Rejected at RP interview'},
+    {id:'c7',name:'Rahul',         reqId:'r4',partnerId:'p5',vendorPoc:'Sukumar', pocContact:'8637646693',resumeDate:'2025-10-24',exp:7, location:'Pune',availability:'',vendorRate:'2.4',resumeFile:null,rpDate:'2025-10-27',rpStatus:'Rejected',submitDate:'',clientDate:'',clientStatus:'',stage:'Rejected',comments:'No knowledge of data'},
+    {id:'c8',name:'Santosh',       reqId:'r4',partnerId:'p5',vendorPoc:'Sukumar', pocContact:'8637646693',resumeDate:'2025-10-24',exp:5, location:'',    availability:'',vendorRate:'',resumeFile:null,rpDate:'2025-10-27',rpStatus:'Rejected',submitDate:'',clientDate:'',clientStatus:'',stage:'Selected',comments:'On hold - reconfirming'}
+  ];
+  db.activity=[];
+}
+
+function showGlobalLoader(on){
+  var el=document.getElementById('global-loader');
+  if(el) el.style.display=on?'flex':'none';
+}
+
+function showPage(page,navEl){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.add('hidden');});
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  document.getElementById('page-'+page).classList.remove('hidden');
+  if(navEl){navEl.classList.add('active');}
+  else{document.querySelectorAll('.nav-item').forEach(function(n){if(n.getAttribute('onclick')&&n.getAttribute('onclick').indexOf("'"+page+"'")!==-1)n.classList.add('active');});}
+  if(page==='dashboard')renderDashboard();
+  if(page==='requirements')renderRequirements();
+  if(page==='pipeline')renderPipeline();
+  if(page==='candidates')renderCandidates();
+  if(page==='partners')renderPartners();
+  if(page==='email')initEmailPage();
+  if(page==='activity')renderActivity();
+}
+
+function uid(){return Math.random().toString(36).slice(2,9);}
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function fmtDate(d){if(!d)return '-';try{return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return d;}}
+function stageBadge(s){var m={'Profile Received':'badge-gray','Screening Scheduled':'badge-purple','Selected':'badge-teal','Submitted to Client':'badge-amber','Client Interview':'badge-orange','Offer':'badge-green','Placed':'badge-green','Rejected':'badge-red'};return '<span class="badge '+(m[s]||'badge-gray')+'">'+(s||'-')+'</span>';}
+function statusBadge(s){var m={'Open':'badge-green','In Progress':'badge-blue','Closed':'badge-gray','On Hold':'badge-amber'};return '<span class="badge '+(m[s]||'badge-gray')+'">'+(s||'-')+'</span>';}
+function typeBadge(t){if(t==='client')return '<span class="badge badge-blue">Client</span>';if(t==='vendor')return '<span class="badge badge-purple">Vendor</span>';if(t==='both')return '<span class="badge badge-blue">Client</span>&nbsp;<span class="badge badge-purple">Vendor</span>';return '-';}
+function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');setTimeout(function(){t.classList.remove('show');},3000);}
+async function logActivity(action,detail){
+  var entry={time:new Date().toLocaleString('en-IN'),user:currentUser?currentUser.name:'System',action:action,detail:detail};
+  db.activity.unshift(entry);
+  if(SB_READY){
+    await supabase.from('activity_log').insert({user_name:currentUser?currentUser.name:'System',action:action,detail:detail});
+  }
+}
+function getPartnerName(id){var p=db.partners.find(function(x){return x.id===id;});return p?p.name:(id||'-');}
+function getPartnerById(id){return db.partners.find(function(x){return x.id===id;})||null;}
+function getReqLabel(id){var r=db.requirements.find(function(x){return x.id===id;});return r?r.role+' @ '+getPartnerName(r.partnerId):(id||'-');}
+
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(function(o){o.addEventListener('click',function(e){if(e.target===o)o.classList.remove('open');});});
+
+function switchReqTab(tab,el){
+  document.querySelectorAll('#req-modal .tab').forEach(function(t){t.classList.remove('active');});
+  el.classList.add('active');
+  document.getElementById('req-tab-basic').classList.toggle('hidden',tab!=='basic');
+  document.getElementById('req-tab-jd').classList.toggle('hidden',tab!=='jd');
+}
+
+function renderDashboard(){
+  var openReqs=db.requirements.filter(function(r){return r.status!=='Closed';});
+  var screening=db.candidates.filter(function(c){return c.stage==='Screening Scheduled';});
+  var placed=db.candidates.filter(function(c){return c.stage==='Placed';});
+  document.getElementById('stat-total-req').textContent=openReqs.length;
+  document.getElementById('stat-total-cand').textContent=db.candidates.length;
+  document.getElementById('stat-screening').textContent=screening.length;
+  document.getElementById('stat-placed').textContent=placed.length;
+  document.getElementById('req-badge').textContent=openReqs.length;
+  var rtb=document.getElementById('dash-req-table');
+  rtb.innerHTML=db.requirements.slice(0,5).map(function(r){return '<tr><td class="td-primary">'+r.role+'</td><td>'+getPartnerName(r.partnerId)+'</td><td>'+statusBadge(r.status)+'</td></tr>';}).join('')||'<tr><td colspan="3" style="text-align:center;color:var(--ink-soft);padding:16px">No requirements yet</td></tr>';
+  var ctb=document.getElementById('dash-cand-table');
+  ctb.innerHTML=db.candidates.slice(0,5).map(function(c){return '<tr><td class="td-primary">'+c.name+'</td><td style="font-size:12px">'+getReqLabel(c.reqId)+'</td><td>'+stageBadge(c.stage)+'</td></tr>';}).join('')||'<tr><td colspan="3" style="text-align:center;color:var(--ink-soft);padding:16px">No candidates yet</td></tr>';
+}
+
+function renderRequirements(search,statusFilter,partnerFilter){
+  search=search||'';statusFilter=statusFilter||'';partnerFilter=partnerFilter||'';
+  var cf=document.getElementById('req-partner-filter');
+  var pNames=[...new Set(db.requirements.map(function(r){return getPartnerName(r.partnerId);}))];
+  cf.innerHTML='<option value="">All Partners</option>'+pNames.map(function(n){return '<option>'+n+'</option>';}).join('');
+  var data=db.requirements;
+  if(search)data=data.filter(function(r){return (r.role+getPartnerName(r.partnerId)+r.location).toLowerCase().indexOf(search.toLowerCase())!==-1;});
+  if(statusFilter)data=data.filter(function(r){return r.status===statusFilter;});
+  if(partnerFilter)data=data.filter(function(r){return getPartnerName(r.partnerId)===partnerFilter;});
+  var tbody=document.getElementById('req-table-body');
+  if(!data.length){tbody.innerHTML='<tr><td colspan="12"><div class="empty-state"><div class="empty-state-icon">&#128203;</div><div class="empty-state-text">No requirements found</div></div></td></tr>';return;}
+  tbody.innerHTML=data.map(function(r,i){
+    var jdBtn=r.jd?'<button class="action-btn" onclick="viewJD(\''+r.id+'\')">View</button>':'<span style="color:var(--ink-soft);font-size:11px">-</span>';
+    return '<tr>'+
+      '<td class="td-mono">'+(i+1)+'</td>'+
+      '<td class="td-primary">'+r.role+'</td>'+
+      '<td>'+getPartnerName(r.partnerId)+'</td>'+
+      '<td>'+fmtDate(r.date)+'</td>'+
+      '<td style="text-align:center">'+(r.positions||1)+'</td>'+
+      '<td>'+(r.exp||'-')+'</td>'+
+      '<td>'+(r.duration||'-')+'</td>'+
+      '<td>'+(r.location||'-')+'</td>'+
+      '<td>'+(r.rateRP||r.rateClient||'-')+'</td>'+
+      '<td>'+statusBadge(r.status)+'</td>'+
+      '<td>'+jdBtn+'</td>'+
+      '<td><div class="action-btns">'+
+        '<button class="action-btn" onclick="editReq(\''+r.id+'\')">Edit</button>'+
+        '<button class="action-btn" onclick="deleteReq(\''+r.id+'\')">Del</button>'+
+      '</div></td>'+
+    '</tr>';
+  }).join('');
+}
+
+function viewJD(reqId){
+  var r=db.requirements.find(function(x){return x.id===reqId;});
+  if(!r||!r.jd)return;
+  document.getElementById('jd-modal-title').textContent=r.role+' - Job Description';
+  document.getElementById('jd-modal-body').textContent=r.jd;
+  openModal('jd-modal');
+}
+
+function populatePartnerDropdown(selectId,typeFilter){
+  var sel=document.getElementById(selectId);
+  var cur=sel.value;
+  var filtered=typeFilter?db.partners.filter(function(p){return p.type===typeFilter||p.type==='both';}):db.partners;
+  sel.innerHTML='<option value="">Select partner...</option>'+filtered.map(function(p){return '<option value="'+p.id+'">'+p.name+'</option>';}).join('');
+  if(cur)sel.value=cur;
+}
+
+function onReqPartnerChange(){var pid=document.getElementById('req-partner').value;var p=getPartnerById(pid);if(p)document.getElementById('req-contact').value=p.poc||'';}
+function onCandPartnerChange(){var pid=document.getElementById('cand-partner').value;var p=getPartnerById(pid);if(p){document.getElementById('cand-vendor-poc').value=p.poc||'';document.getElementById('cand-poc-contact').value=p.contact||'';}}
+
+function openReqModal(id){
+  editingId.req=id||null;
+  document.getElementById('req-modal-title').textContent=id?'Edit Requirement':'Add Requirement';
+  switchReqTab('basic',document.querySelector('#req-modal .tab'));
+  populatePartnerDropdown('req-partner','client');
+  if(id){
+    var r=db.requirements.find(function(x){return x.id===id;});
+    document.getElementById('req-role').value=r.role;document.getElementById('req-partner').value=r.partnerId||'';
+    document.getElementById('req-contact').value=r.contact||'';document.getElementById('req-date').value=r.date||'';
+    document.getElementById('req-positions').value=r.positions||'';document.getElementById('req-exp').value=r.exp||'';
+    document.getElementById('req-location').value=r.location||'';document.getElementById('req-rate-client').value=r.rateClient||'';
+    document.getElementById('req-rate-redpluto').value=r.rateRP||'';document.getElementById('req-status').value=r.status||'Open';
+    document.getElementById('req-duration').value=r.duration||'';
+    document.getElementById('req-comments').value=r.comments||'';document.getElementById('req-jd').value=r.jd||'';
+  } else {
+    ['req-role','req-contact','req-positions','req-exp','req-location','req-rate-client','req-rate-redpluto','req-duration','req-comments','req-jd'].forEach(function(f){document.getElementById(f).value='';});
+    document.getElementById('req-partner').value='';document.getElementById('req-status').value='Open';document.getElementById('req-date').value=todayStr();
+  }
+  openModal('req-modal');
+}
+async function saveRequirement(){
+  var role=document.getElementById('req-role').value.trim();
+  var pid=document.getElementById('req-partner').value;
+  if(!role||!pid){showToast('Role and Partner are required','error');return;}
+  var data={role:role,partnerId:pid,contact:document.getElementById('req-contact').value,date:document.getElementById('req-date').value,positions:document.getElementById('req-positions').value||1,exp:document.getElementById('req-exp').value,duration:document.getElementById('req-duration').value,location:document.getElementById('req-location').value,rateClient:document.getElementById('req-rate-client').value,rateRP:document.getElementById('req-rate-redpluto').value,status:document.getElementById('req-status').value,comments:document.getElementById('req-comments').value,jd:document.getElementById('req-jd').value};
+  if(editingId.req){
+    if(SB_READY){var r=await sbUpdate('requirements',editingId.req,unmapReq(data));if(!r)return;data.id=editingId.req;}
+    Object.assign(db.requirements.find(function(x){return x.id===editingId.req;}),data);
+    await logActivity('Update','Requirement: '+role);showToast('Requirement updated','success');
+  } else {
+    if(SB_READY){var r=await sbInsert('requirements',unmapReq(data));if(!r)return;data.id=r.id;db.requirements.push(data);}
+    else{data.id=uid();db.requirements.push(data);}
+    await logActivity('Add','New requirement: '+role);showToast('Requirement added','success');
+  }
+  closeModal('req-modal');renderRequirements();renderDashboard();
+}
+async function deleteReq(id){
+  if(!confirm('Delete this requirement?'))return;
+  var r=db.requirements.find(function(x){return x.id===id;});
+  if(SB_READY){var ok=await sbDelete('requirements',id);if(!ok)return;}
+  db.requirements=db.requirements.filter(function(x){return x.id!==id;});
+  await logActivity('Delete','Requirement: '+r.role);
+  renderRequirements();renderDashboard();showToast('Requirement deleted','error');
+}
+
+var dragCandId=null;
+var pipelineView='card';
+
+function setPipelineView(v){
+  pipelineView=v;
+  document.getElementById('pl-view-card').classList.toggle('active',v==='card');
+  document.getElementById('pl-view-list').classList.toggle('active',v==='list');
+  renderPipeline();
+}
+
+var STAGES=['Profile Received','Screening Scheduled','Selected','Submitted to Client','Client Interview','Offer','Placed','Rejected'];
+var STAGE_CLS={'Profile Received':'col-received','Screening Scheduled':'col-screening','Selected':'col-selected','Submitted to Client':'col-submitted','Client Interview':'col-interview','Offer':'col-offer','Placed':'col-placed','Rejected':'col-rejected'};
+
+function renderPipeline(){
+  var reqFilter=document.getElementById('pipeline-req-filter').value;
+  var clientFilter=document.getElementById('pipeline-client-filter').value;
+  var vendorFilter=document.getElementById('pipeline-vendor-filter').value;
+  var stageFilter=document.getElementById('pipeline-stage-filter').value;
+  var prf=document.getElementById('pipeline-req-filter');var curReq=prf.value;
+  prf.innerHTML='<option value="">All Requirements</option>'+db.requirements.map(function(r){return '<option value="'+r.id+'">'+r.role+' @ '+getPartnerName(r.partnerId)+'</option>';}).join('');
+  prf.value=curReq;
+  var clients=db.partners.filter(function(p){return p.type==='client'||p.type==='both';});
+  var vendors=db.partners.filter(function(p){return p.type==='vendor'||p.type==='both';});
+  var cf=document.getElementById('pipeline-client-filter');var cv=document.getElementById('pipeline-vendor-filter');
+  var curCl=cf.value;var curVd=cv.value;
+  cf.innerHTML='<option value="">All Clients</option>'+clients.map(function(p){return '<option value="'+p.id+'">'+p.name+'</option>';}).join('');
+  cv.innerHTML='<option value="">All Vendors</option>'+vendors.map(function(p){return '<option value="'+p.id+'">'+p.name+'</option>';}).join('');
+  cf.value=curCl;cv.value=curVd;
+  var cands=db.candidates;
+  if(reqFilter)cands=cands.filter(function(c){return c.reqId===reqFilter;});
+  if(clientFilter){cands=cands.filter(function(c){var r=db.requirements.find(function(x){return x.id===c.reqId;});return r&&r.partnerId===clientFilter;});}
+  if(vendorFilter)cands=cands.filter(function(c){return c.partnerId===vendorFilter;});
+  if(stageFilter)cands=cands.filter(function(c){return c.stage===stageFilter;});
+  if(pipelineView==='list'){renderPipelineList(cands);}else{renderPipelineCards(cands);}
+}
+
+function renderPipelineCards(cands){
+  var board=document.getElementById('pipeline-board');
+  board.className='pipeline';
+  board.innerHTML=STAGES.map(function(stageKey){
+    var cls=STAGE_CLS[stageKey];
+    var cards=cands.filter(function(c){return c.stage===stageKey;});
+    var cardHtml=cards.map(function(c){
+      var dl='';
+      if(c.rpDate)dl+='<div>RP: '+fmtDate(c.rpDate)+(c.rpStatus?' ('+c.rpStatus+')':'')+'</div>';
+      if(c.submitDate)dl+='<div>Sub: '+fmtDate(c.submitDate)+'</div>';
+      if(c.clientDate)dl+='<div>Client: '+fmtDate(c.clientDate)+(c.clientStatus?' ('+c.clientStatus+')':'')+'</div>';
+      var cv2=c.resumeFile?'<span style="font-size:9px;background:var(--blue-bg);color:#1D4ED8;padding:1px 5px;border-radius:3px;margin-left:4px">CV</span>':'';
+      return '<div class="pipeline-card" draggable="true" data-cid="'+c.id+'"'+
+        ' ondragstart="onCardDragStart(event)" ondragend="onCardDragEnd(event)" onclick="onCardClick(event,\''+c.id+'\')"'+
+      '>'+
+        '<div class="pc-name">'+c.name+cv2+'</div>'+
+        '<div class="pc-req">'+getReqLabel(c.reqId)+'</div>'+
+        (dl?'<div class="pc-dates">'+dl+'</div>':'')+
+        '<div class="pc-footer"><span style="font-size:10px;color:var(--ink-soft)">'+(c.exp?c.exp+'y':'-')+' | '+(c.location||'-')+'</span></div>'+
+      '</div>';
+    }).join('');
+    return '<div class="pipeline-col">'+
+      '<div class="pipeline-col-header '+cls+'">'+
+        '<span>'+stageKey+'</span>'+
+        '<span style="background:rgba(0,0,0,0.15);color:inherit;font-size:10px;padding:2px 6px;border-radius:10px">'+cards.length+'</span>'+
+      '</div>'+
+      '<div class="pipeline-cards" data-stage="'+stageKey+'"'+
+        ' ondragover="onColDragOver(event)" ondragenter="onColDragEnter(event)" ondragleave="onColDragLeave(event)" ondrop="onColDrop(event)"'+
+      '>'+
+        (cardHtml||'<div style="font-size:11px;color:var(--ink-soft);text-align:center;padding:20px 0">Drop here</div>')+
+        '<div class="drag-hint">Drag cards to move</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function renderPipelineList(cands){
+  var board=document.getElementById('pipeline-board');
+  board.className='';
+  if(!cands.length){board.innerHTML='<div class="table-card"><div class="empty-state"><div class="empty-state-icon">&#128100;</div><div class="empty-state-text">No candidates match filters</div></div></div>';return;}
+  var stageOpts=STAGES.map(function(s){return '<option value="'+s+'">'+s+'</option>';}).join('');
+  var rows=cands.map(function(c){
+    var cvCell=c.resumeFile?'<a class="resume-link" onclick="viewResume(\''+c.id+'\')">&#128196; CV</a>':'<span style="color:var(--ink-soft);font-size:11px">-</span>';
+    var dl='';
+    if(c.rpDate)dl+='RP:'+fmtDate(c.rpDate)+' ';
+    if(c.submitDate)dl+='Sub:'+fmtDate(c.submitDate)+' ';
+    if(c.clientDate)dl+='Cl:'+fmtDate(c.clientDate);
+    return '<tr draggable="true" data-cid="'+c.id+'" style="cursor:grab"'+
+      ' ondragstart="onRowDragStart(event)" ondragend="onRowDragEnd(event)"'+
+      ' ondragover="onRowDragOver(event)" ondrop="onRowDrop(event)"'+
+    '>'+
+      '<td style="color:var(--ink-soft);font-size:12px;width:20px">&#8597;</td>'+
+      '<td class="td-primary" style="cursor:pointer" onclick="openPipelineModal(\''+c.id+'\')">'+c.name+'</td>'+
+      '<td>'+cvCell+'</td>'+
+      '<td style="font-size:12px">'+getReqLabel(c.reqId)+'</td>'+
+      '<td>'+getPartnerName(c.partnerId)+'</td>'+
+      '<td>'+(c.exp?c.exp+'y':'-')+'</td>'+
+      '<td>'+(c.location||'-')+'</td>'+
+      '<td style="min-width:170px">'+
+        '<select class="stage-select-inline" onchange="updateStageInline(\''+c.id+'\',this.value)" onclick="event.stopPropagation()">'+
+          STAGES.map(function(s){return '<option value="'+s+'"'+(c.stage===s?' selected':'')+'>'+s+'</option>';}).join('')+
+        '</select>'+
+      '</td>'+
+      '<td style="font-size:11px;color:var(--ink-soft);white-space:nowrap">'+dl+'</td>'+
+      '<td><button class="action-btn" onclick="openPipelineModal(\''+c.id+'\')">Details</button></td>'+
+    '</tr>';
+  }).join('');
+  board.innerHTML='<div class="table-card"><div class="table-wrap"><table>'+
+    '<thead><tr><th></th><th>Name</th><th>CV</th><th>Role</th><th>Partner</th><th>Exp</th><th>Location</th><th>Stage</th><th>Dates</th><th></th></tr></thead>'+
+    '<tbody id="pipeline-list-body">'+rows+'</tbody>'+
+  '</table></div><div style="padding:10px 16px;font-size:11px;color:var(--ink-soft)">Drag rows to swap stages. Use the Stage dropdown to change stage directly.</div></div>';
+}
+
+function updateStageInline(candId,newStage){
+  var c=db.candidates.find(function(x){return x.id===candId;});
+  if(!c||c.stage===newStage)return;
+  var old=c.stage;c.stage=newStage;
+  if(SB_READY) sbUpdate('candidates',c.id,{stage:newStage});
+  logActivity('Stage Move',c.name+': '+old+' to '+newStage);
+  showToast(c.name+' moved to '+newStage,'success');
+  renderDashboard();
+}
+
+function onCardDragStart(e){dragCandId=e.currentTarget.getAttribute('data-cid');e.currentTarget.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragCandId);}
+function onCardDragEnd(e){e.currentTarget.classList.remove('dragging');document.querySelectorAll('.pipeline-cards').forEach(function(col){col.classList.remove('drag-over','drag-over-reject');});}
+function onColDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';}
+function onColDragEnter(e){e.preventDefault();var col=e.currentTarget;if(col.getAttribute('data-stage')==='Rejected'){col.classList.add('drag-over-reject');}else{col.classList.add('drag-over');}}
+function onColDragLeave(e){if(!e.currentTarget.contains(e.relatedTarget)){e.currentTarget.classList.remove('drag-over','drag-over-reject');}}
+function onColDrop(e){
+  e.preventDefault();var col=e.currentTarget;col.classList.remove('drag-over','drag-over-reject');
+  var toStage=col.getAttribute('data-stage');if(!dragCandId||!toStage)return;
+  var c=db.candidates.find(function(x){return x.id===dragCandId;});if(!c)return;
+  var from=c.stage;if(from===toStage)return;
+  c.stage=toStage;
+  if(SB_READY) sbUpdate('candidates',c.id,{stage:toStage});
+  logActivity('Stage Move',c.name+': '+from+' to '+toStage);
+  showToast(c.name+' moved to '+toStage,'success');dragCandId=null;renderPipeline();renderDashboard();
+}
+function onCardClick(e,candId){if(e.defaultPrevented)return;openPipelineModal(candId);}
+
+var dragRowCandId=null;
+function onRowDragStart(e){dragRowCandId=e.currentTarget.getAttribute('data-cid');e.currentTarget.style.opacity='0.4';e.dataTransfer.effectAllowed='move';}
+function onRowDragEnd(e){e.currentTarget.style.opacity='1';}
+function onRowDragOver(e){e.preventDefault();e.currentTarget.style.background='#EFF6FF';}
+function onRowDrop(e){
+  e.preventDefault();e.currentTarget.style.background='';
+  var toCid=e.currentTarget.getAttribute('data-cid');
+  if(!dragRowCandId||!toCid||dragRowCandId===toCid)return;
+  var fromC=db.candidates.find(function(x){return x.id===dragRowCandId;});
+  var toC=db.candidates.find(function(x){return x.id===toCid;});
+  if(!fromC||!toC||fromC.stage===toC.stage)return;
+  var oldStage=fromC.stage;fromC.stage=toC.stage;
+  if(SB_READY) sbUpdate('candidates',fromC.id,{stage:toC.stage});
+  logActivity('Stage Move',fromC.name+': '+oldStage+' to '+toC.stage);
+  showToast(fromC.name+' moved to '+toC.stage,'success');
+  dragRowCandId=null;renderPipeline();renderDashboard();
+}
+
+window.onload=function(){SB_READY=initSupabase();};
+
+function openPipelineModal(candId){
+  editingId.pipeline=candId;
+  var c=db.candidates.find(function(x){return x.id===candId;});
+  document.getElementById('pl-modal-name').textContent=c.name;
+  document.getElementById('pl-modal-req').textContent=getReqLabel(c.reqId);
+  document.getElementById('pl-rp-date').value=c.rpDate||'';
+  document.getElementById('pl-rp-status').value=c.rpStatus||'';
+  document.getElementById('pl-submit-date').value=c.submitDate||'';
+  document.getElementById('pl-client-date').value=c.clientDate||'';
+  document.getElementById('pl-client-status').value=c.clientStatus||'';
+  document.getElementById('pl-stage').value=c.stage||'Profile Received';
+  document.getElementById('pl-comments').value=c.comments||'';
+  openModal('pipeline-modal');
+}
+async function savePipelineUpdate(){
+  var c=db.candidates.find(function(x){return x.id===editingId.pipeline;});
+  c.rpDate=document.getElementById('pl-rp-date').value;
+  c.rpStatus=document.getElementById('pl-rp-status').value;
+  c.submitDate=document.getElementById('pl-submit-date').value;
+  c.clientDate=document.getElementById('pl-client-date').value;
+  c.clientStatus=document.getElementById('pl-client-status').value;
+  c.stage=document.getElementById('pl-stage').value;
+  c.comments=document.getElementById('pl-comments').value;
+  if(SB_READY) await sbUpdate('candidates',c.id,unmapCand(c));
+  await logActivity('Pipeline Update',c.name+' moved to '+c.stage);
+  showToast('Pipeline updated','success');
+  closeModal('pipeline-modal');
+  renderPipeline();renderDashboard();
+}
+
+var pendingResumeFile=null;
+function handleResumeUpload(input){
+  if(input.files&&input.files[0]){
+    var f=input.files[0];
+    if(f.size>5*1024*1024){showToast('File too large (max 5MB)','error');return;}
+    pendingResumeFile=f;
+    document.getElementById('resume-upload-text').textContent='Selected: '+f.name;
+    document.getElementById('resume-upload-zone').style.borderColor='var(--red)';
+  }
+}
+function handleResumeDrop(event){
+  event.preventDefault();
+  document.getElementById('resume-upload-zone').classList.remove('drag');
+  var files=event.dataTransfer.files;
+  if(files&&files[0]){document.getElementById('resume-file-input').files=files;handleResumeUpload(document.getElementById('resume-file-input'));}
+}
+
+function renderCandidates(search,stageFilter,partnerFilter){
+  search=search||'';stageFilter=stageFilter||'';partnerFilter=partnerFilter||'';
+  var pf=document.getElementById('cand-partner-filter');
+  var pNames=[...new Set(db.candidates.map(function(c){return getPartnerName(c.partnerId);}))].filter(function(n){return n&&n!=='-';});
+  pf.innerHTML='<option value="">All Partners</option>'+pNames.map(function(n){return '<option>'+n+'</option>';}).join('');
+  var data=db.candidates;
+  if(search)data=data.filter(function(c){return c.name.toLowerCase().indexOf(search.toLowerCase())!==-1||getPartnerName(c.partnerId).toLowerCase().indexOf(search.toLowerCase())!==-1;});
+  if(stageFilter)data=data.filter(function(c){return c.stage===stageFilter;});
+  if(partnerFilter)data=data.filter(function(c){return getPartnerName(c.partnerId)===partnerFilter;});
+  var tbody=document.getElementById('cand-table-body');
+  if(!data.length){tbody.innerHTML='<tr><td colspan="10"><div class="empty-state"><div class="empty-state-icon">&#128100;</div><div class="empty-state-text">No candidates found</div></div></td></tr>';return;}
+  tbody.innerHTML=data.map(function(c,i){
+    var resumeCell=c.resumeFile
+      ?'<a class="resume-link" onclick="viewResume(\''+c.id+'\')" title="View resume">&#128196; View</a>'
+      :'<span style="color:var(--ink-soft);font-size:11px">-</span>';
+    return '<tr>'+
+      '<td class="td-mono">'+(i+1)+'</td>'+
+      '<td class="td-primary">'+c.name+'</td>'+
+      '<td>'+resumeCell+'</td>'+
+      '<td>'+getPartnerName(c.partnerId)+'</td>'+
+      '<td style="font-size:12px">'+getReqLabel(c.reqId)+'</td>'+
+      '<td>'+(c.exp?c.exp+'y':'-')+'</td>'+
+      '<td>'+(c.location||'-')+'</td>'+
+      '<td>'+(c.availability||'-')+'</td>'+
+      '<td>'+(c.vendorRate||'-')+'</td>'+
+      '<td><div class="action-btns">'+
+        '<button class="action-btn" onclick="editCand(\''+c.id+'\')">Edit</button>'+
+        '<button class="action-btn" onclick="deleteCand(\''+c.id+'\')">Del</button>'+
+      '</div></td>'+
+    '</tr>';
+  }).join('');
+}
+
+function viewResume(candId){
+  var c=db.candidates.find(function(x){return x.id===candId;});
+  if(!c||!c.resumeFile)return;
+  document.getElementById('resume-modal-title').textContent=c.name+' - Resume';
+  var url=URL.createObjectURL(c.resumeFile);
+  if(c.resumeFile.type==='application/pdf'){
+    document.getElementById('resume-iframe').src=url;
+    document.getElementById('resume-iframe').classList.remove('hidden');
+    document.getElementById('resume-no-preview').classList.add('hidden');
+  } else {
+    document.getElementById('resume-iframe').classList.add('hidden');
+    document.getElementById('resume-no-preview').classList.remove('hidden');
+    document.getElementById('resume-filename-display').textContent=c.resumeFile.name;
+    document.getElementById('resume-download-btn').onclick=function(){var a=document.createElement('a');a.href=url;a.download=c.resumeFile.name;a.click();};
+  }
+  openModal('resume-modal');
+}
+
+function openCandModal(id){
+  editingId.cand=id||null;
+  pendingResumeFile=null;
+  document.getElementById('cand-modal-title').textContent=id?'Edit Candidate':'Add Candidate';
+  document.getElementById('cand-req').innerHTML='<option value="">Select requirement...</option>'+db.requirements.map(function(r){return '<option value="'+r.id+'">'+r.role+' @ '+getPartnerName(r.partnerId)+'</option>';}).join('');
+  populatePartnerDropdown('cand-partner','');
+  document.getElementById('resume-file-input').value='';
+  if(id){
+    var c=db.candidates.find(function(x){return x.id===id;});
+    document.getElementById('cand-name').value=c.name||'';
+    document.getElementById('cand-req').value=c.reqId||'';
+    document.getElementById('cand-partner').value=c.partnerId||'';
+    document.getElementById('cand-vendor-poc').value=c.vendorPoc||'';
+    document.getElementById('cand-poc-contact').value=c.pocContact||'';
+    document.getElementById('cand-resume-date').value=c.resumeDate||'';
+    document.getElementById('cand-exp').value=c.exp||'';
+    document.getElementById('cand-location').value=c.location||'';
+    document.getElementById('cand-availability').value=c.availability||'';
+    document.getElementById('cand-vendor-rate').value=c.vendorRate||'';
+    document.getElementById('cand-comments').value=c.comments||'';
+    document.getElementById('resume-upload-text').textContent=c.resumeFile?'Current: '+c.resumeFile.name:'Click to upload or drag & drop resume';
+    document.getElementById('resume-upload-zone').style.borderColor=c.resumeFile?'var(--red)':'var(--border)';
+  } else {
+    ['cand-name','cand-vendor-poc','cand-poc-contact','cand-exp','cand-location','cand-availability','cand-vendor-rate','cand-comments'].forEach(function(f){document.getElementById(f).value='';});
+    document.getElementById('cand-req').value='';document.getElementById('cand-partner').value='';
+    document.getElementById('cand-resume-date').value=todayStr();
+    document.getElementById('resume-upload-text').textContent='Click to upload or drag & drop resume';
+    document.getElementById('resume-upload-zone').style.borderColor='var(--border)';
+  }
+  openModal('cand-modal');
+}
+async function saveCandidate(){
+  var name=document.getElementById('cand-name').value.trim();
+  if(!name){showToast('Candidate name is required','error');return;}
+  var data={name:name,reqId:document.getElementById('cand-req').value,partnerId:document.getElementById('cand-partner').value,vendorPoc:document.getElementById('cand-vendor-poc').value,pocContact:document.getElementById('cand-poc-contact').value,resumeDate:document.getElementById('cand-resume-date').value,exp:document.getElementById('cand-exp').value,location:document.getElementById('cand-location').value,availability:document.getElementById('cand-availability').value,vendorRate:document.getElementById('cand-vendor-rate').value,comments:document.getElementById('cand-comments').value};
+  if(pendingResumeFile)data.resumeFile=pendingResumeFile;
+  if(editingId.cand){
+    var ex=db.candidates.find(function(x){return x.id===editingId.cand;});
+    if(SB_READY){var r=await sbUpdate('candidates',editingId.cand,unmapCand(Object.assign({},ex,data)));if(!r)return;}
+    Object.assign(ex,data);
+    await logActivity('Update','Candidate: '+name);showToast('Candidate updated','success');
+  } else {
+    data.rpDate='';data.rpStatus='';data.submitDate='';data.clientDate='';data.clientStatus='';data.stage='Profile Received';
+    if(!data.resumeFile)data.resumeFile=null;
+    if(SB_READY){var r=await sbInsert('candidates',unmapCand(data));if(!r)return;data.id=r.id;db.candidates.push(data);}
+    else{data.id=uid();db.candidates.push(data);}
+    await logActivity('Add','New candidate: '+name);showToast('Candidate added','success');
+  }
+  closeModal('cand-modal');renderCandidates();renderDashboard();
+}
+async function deleteCand(id){
+  if(!confirm('Delete this candidate?'))return;
+  var c=db.candidates.find(function(x){return x.id===id;});
+  if(SB_READY){var ok=await sbDelete('candidates',id);if(!ok)return;}
+  db.candidates=db.candidates.filter(function(x){return x.id!==id;});
+  await logActivity('Delete','Candidate: '+c.name);
+  renderCandidates();renderDashboard();showToast('Candidate deleted','error');
+}
+
+function renderPartners(search,typeFilter){
+  search=search||'';typeFilter=typeFilter||'';
+  var data=db.partners;
+  if(search)data=data.filter(function(p){return p.name.toLowerCase().indexOf(search.toLowerCase())!==-1||(p.poc||'').toLowerCase().indexOf(search.toLowerCase())!==-1;});
+  if(typeFilter)data=data.filter(function(p){return p.type===typeFilter;});
+  var tbody=document.getElementById('partner-table-body');
+  if(!data.length){tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">&#129309;</div><div class="empty-state-text">No partners yet</div></div></td></tr>';return;}
+  tbody.innerHTML=data.map(function(p,i){
+    var openReqs=db.requirements.filter(function(r){return r.partnerId===p.id&&r.status!=='Closed';}).length;
+    var cands=db.candidates.filter(function(c){return c.partnerId===p.id;}).length;
+    return '<tr>'+
+      '<td class="td-mono">'+(i+1)+'</td>'+
+      '<td class="td-primary">'+p.name+'</td>'+
+      '<td>'+(p.poc||'-')+'</td>'+
+      '<td class="td-mono">'+(p.contact||'-')+'</td>'+
+      '<td>'+typeBadge(p.type)+'</td>'+
+      '<td style="text-align:center">'+openReqs+'</td>'+
+      '<td style="text-align:center">'+cands+'</td>'+
+      '<td><div class="action-btns">'+
+        '<button class="action-btn" onclick="editPartner(\''+p.id+'\')">Edit</button>'+
+        '<button class="action-btn" onclick="deletePartner(\''+p.id+'\')">Del</button>'+
+      '</div></td>'+
+    '</tr>';
+  }).join('');
+}
+function openPartnerModal(id){
+  editingId.partner=id||null;
+  document.getElementById('partner-modal-title').textContent=id?'Edit Partner':'Add Partner';
+  if(id){var p=db.partners.find(function(x){return x.id===id;});document.getElementById('p-name').value=p.name;document.getElementById('p-poc').value=p.poc||'';document.getElementById('p-contact').value=p.contact||'';document.getElementById('p-type').value=p.type||'client';document.getElementById('p-notes').value=p.notes||'';}
+  else{['p-name','p-poc','p-contact','p-notes'].forEach(function(f){document.getElementById(f).value='';});document.getElementById('p-type').value='client';}
+  openModal('partner-modal');
+}
+function editPartner(id){openPartnerModal(id);}
+async function deletePartner(id){
+  if(!confirm('Delete this partner?'))return;
+  var p=db.partners.find(function(x){return x.id===id;});
+  if(SB_READY){var ok=await sbDelete('partners',id);if(!ok)return;}
+  db.partners=db.partners.filter(function(x){return x.id!==id;});
+  await logActivity('Delete','Partner: '+p.name);
+  renderPartners();showToast('Partner deleted','error');
+}
+async function savePartner(){
+  var name=document.getElementById('p-name').value.trim();
+  if(!name){showToast('Partner name is required','error');return;}
+  var data={name:name,poc:document.getElementById('p-poc').value,contact:document.getElementById('p-contact').value,type:document.getElementById('p-type').value,notes:document.getElementById('p-notes').value};
+  if(editingId.partner){
+    if(SB_READY){var r=await sbUpdate('partners',editingId.partner,unmapPartner(data));if(!r)return;}
+    Object.assign(db.partners.find(function(x){return x.id===editingId.partner;}),data);
+    await logActivity('Update','Partner: '+name);showToast('Partner updated','success');
+  } else {
+    if(SB_READY){var r=await sbInsert('partners',unmapPartner(data));if(!r)return;data.id=r.id;db.partners.push(data);}
+    else{data.id=uid();db.partners.push(data);}
+    await logActivity('Add','New partner: '+name);showToast('Partner added','success');
+  }
+  closeModal('partner-modal');renderPartners();
+}
+
+function initEmailPage(){
+  var sel=document.getElementById('email-req-select');
+  sel.innerHTML='<option value="">Select a requirement...</option>'+db.requirements.filter(function(r){return r.status==='Open'||r.status==='In Progress';}).map(function(r){return '<option value="'+r.id+'">'+r.role+' @ '+getPartnerName(r.partnerId)+'</option>';}).join('');
+  renderVendorCheckList();
+  document.getElementById('email-req-preview').classList.add('hidden');
+  document.getElementById('email-body').value='';
+  document.getElementById('email-subject').value='';
+}
+function renderVendorCheckList(){
+  var vendors=db.partners.filter(function(p){return p.type==='vendor'||p.type==='both';});
+  var list=document.getElementById('vendor-check-list');
+  if(!vendors.length){list.innerHTML='<div style="padding:16px;text-align:center;color:var(--ink-soft);font-size:13px">No vendors added yet. Add vendors in Partners page.</div>';return;}
+  list.innerHTML=vendors.map(function(v){
+    return '<label class="vendor-check-item">'+
+      '<input type="checkbox" value="'+v.id+'" />'+
+      '<div><div class="vendor-check-name">'+v.name+'</div><div class="vendor-check-poc">'+v.poc+(v.contact?' &bull; '+v.contact:'')+'</div></div>'+
+    '</label>';
+  }).join('');
+}
+function selectAllVendors(){document.querySelectorAll('#vendor-check-list input[type="checkbox"]').forEach(function(cb){cb.checked=true;});}
+function clearVendors(){document.querySelectorAll('#vendor-check-list input[type="checkbox"]').forEach(function(cb){cb.checked=false;});}
+function onEmailReqChange(){
+  var rid=document.getElementById('email-req-select').value;
+  if(!rid){document.getElementById('email-req-preview').classList.add('hidden');document.getElementById('email-body').value='';document.getElementById('email-subject').value='';return;}
+  var r=db.requirements.find(function(x){return x.id===rid;});
+  var preview=document.getElementById('email-req-preview');
+  preview.classList.remove('hidden');
+  preview.innerHTML='<strong>'+r.role+'</strong> &bull; '+getPartnerName(r.partnerId)+'<br>Location: '+(r.location||'-')+' &bull; Exp: '+(r.exp||'-')+' &bull; Positions: '+(r.positions||1)+'<br>Rate: '+(r.rateRP||r.rateClient||'Open');
+  generateEmail(r);
+}
+function generateEmail(r){
+  if(!r){var rid=document.getElementById('email-req-select').value;if(!rid)return;r=db.requirements.find(function(x){return x.id===rid;});}
+  var subject='Requirement: '+r.role+' | '+(r.location||'Remote')+' | '+r.exp+' yrs';
+  document.getElementById('email-subject').value=subject;
+  var body='Hi [Vendor POC Name],\n\nHope you are doing well!\n\nWe have an urgent staffing requirement. Please find the details below and share matching profiles at the earliest.\n\n';
+  body+='--- REQUIREMENT DETAILS ---\n\n';
+  body+='Role            : '+r.role+'\n';
+  body+='Experience      : '+(r.exp||'Open')+' years\n';
+  body+='Location        : '+(r.location||'Remote')+'\n';
+  body+='No. of Positions: '+(r.positions||1)+'\n';
+  body+='Budget          : '+(r.rateRP||r.rateClient||'Open')+'\n';
+  if(r.duration){body+='Contract Duration: '+r.duration+'\n';}
+  if(r.jd){body+='\nPlease refer to the attached Job Description PDF for detailed requirements.\n';}
+  body+='\n--- WHAT WE NEED ---\n\n';
+  body+='Please share profiles with:\n';
+  body+='  - Updated resume\n';
+  body+='  - Current CTC / Expected CTC\n';
+  body+='  - Availability / Notice period\n';
+  body+='  - Current location\n\n';
+  body+='Kindly respond at your earliest.\n\n';
+  body+='Best regards,\nRedPluto Analytics Team\n';
+  document.getElementById('email-body').value=body;
+  var jdSection=document.getElementById('email-jd-section');
+  if(r.jd){
+    jdSection.classList.remove('hidden');
+    document.getElementById('email-jd-name').textContent='JD_'+r.role.replace(/[^a-zA-Z0-9]/g,'_')+'.pdf';
+    document.getElementById('email-jd-download-btn').onclick=function(){downloadJDasPDF(r);};
+  } else {
+    jdSection.classList.add('hidden');
+  }
+}
+function downloadJDasPDF(r){
+  if(!r){var rid=document.getElementById('email-req-select').value;if(!rid)return;r=db.requirements.find(function(x){return x.id===rid;});}
+  if(!r||!r.jd){showToast('No job description to export','error');return;}
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8">'+
+    '<style>body{font-family:Arial,sans-serif;margin:40px;color:#1A1A2E;line-height:1.7}'+
+    'h1{font-size:20px;border-bottom:2px solid #E63946;padding-bottom:10px;margin-bottom:20px}'+
+    '.meta{background:#f5f5f5;padding:12px 16px;border-radius:6px;margin-bottom:24px;font-size:13px}'+
+    '.meta div{margin-bottom:4px}pre{white-space:pre-wrap;font-family:Arial,sans-serif;font-size:14px}</style>'+
+    '</head><body>'+
+    '<h1>Job Description: '+r.role+'</h1>'+
+    '<div class="meta">'+
+    '<div><strong>Location:</strong> '+(r.location||'Remote')+'</div>'+
+    '<div><strong>Experience:</strong> '+(r.exp||'Open')+' years</div>'+
+    '<div><strong>Positions:</strong> '+(r.positions||1)+'</div>'+
+    (r.duration?'<div><strong>Duration:</strong> '+r.duration+'</div>':'')+
+    '<div><strong>Budget:</strong> '+(r.rateRP||r.rateClient||'Open')+'</div>'+
+    '</div>'+
+    '<pre>'+r.jd.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</pre>'+
+    '</body></html>';
+  var blob=new Blob([html],{type:'text/html'});
+  var url=URL.createObjectURL(blob);
+  var win=window.open(url,'_blank');
+  if(win){setTimeout(function(){win.print();},400);}
+  else{var a=document.createElement('a');a.href=url;a.download='JD_'+r.role.replace(/[^a-zA-Z0-9]/g,'_')+'.html';a.click();}
+  showToast('JD opened — use Print > Save as PDF','success');
+}
+
+function regenerateEmail(){onEmailReqChange();}
+function sendEmailToVendors(){
+  var rid=document.getElementById('email-req-select').value;
+  if(!rid){showToast('Please select a requirement first','error');return;}
+  var checked=Array.from(document.querySelectorAll('#vendor-check-list input[type="checkbox"]:checked'));
+  if(!checked.length){showToast('Please select at least one vendor','error');return;}
+  var r=db.requirements.find(function(x){return x.id===rid;});
+  var hasJD=!!(r&&r.jd);
+  checked.forEach(function(cb){
+    var p=getPartnerById(cb.value);
+    if(p)logActivity('Email Sent','Requirement "'+r.role+'" sent to '+p.name+(hasJD?' (with JD PDF)':''));
+  });
+  var names=checked.map(function(cb){var p=getPartnerById(cb.value);return p?p.name:'?';}).join(', ');
+  var jdNote=hasJD?' &bull; <strong>JD PDF attached</strong>':'';
+  document.getElementById('email-sent-list').innerHTML='<div style="background:var(--green-bg);border:1px solid #BBF7D0;border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:#15803D">Marked as sent to: <strong>'+names+'</strong>'+jdNote+'</div>';
+  showToast('Marked as sent to '+checked.length+' vendor(s)','success');
+}
+function copyEmailToClipboard(){
+  var body=document.getElementById('email-body').value;
+  var subject=document.getElementById('email-subject').value;
+  if(!body){showToast('Generate an email first','error');return;}
+  var full='Subject: '+subject+'\n\n'+body;
+  if(navigator.clipboard){navigator.clipboard.writeText(full).then(function(){showToast('Email copied to clipboard','success');});}
+  else{var ta=document.createElement('textarea');ta.value=full;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('Email copied to clipboard','success');}
+}
+
+function renderActivity(){
+  var tbody=document.getElementById('activity-table');
+  if(!db.activity.length){tbody.innerHTML='<tr><td colspan="4"><div class="empty-state"><div class="empty-state-icon">&#128200;</div><div class="empty-state-text">No activity yet</div></div></td></tr>';return;}
+  tbody.innerHTML=db.activity.map(function(a){return '<tr><td class="td-mono" style="white-space:nowrap">'+a.time+'</td><td>'+a.user+'</td><td><span class="badge badge-blue">'+a.action+'</span></td><td>'+a.detail+'</td></tr>';}).join('');
+}
+</script>
+</body>
+</html>
